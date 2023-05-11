@@ -13,9 +13,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\TgLib\TgLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="D1gitalLibrary">
       <HintPath>D1gitalLibrary.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="settings.cfg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="settings.cfg.default">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
