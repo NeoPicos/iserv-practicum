@@ -113,6 +113,17 @@ namespace TgLib
             {
                 return await User.SendMessage(message);
             }
+
+            /// <summary>
+            /// Останавливает выполнение метода до получения ввода пользователя
+            /// </summary>
+            /// <returns></returns>
+            public async Task<string> WaitForUserInput()
+            {
+                Task<string> TcsTask = Client.interact.AddRequest(User).Tcs.Task;
+                await TcsTask;
+                return TcsTask.Result;
+            }
             #endregion
         }
 

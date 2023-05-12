@@ -21,6 +21,8 @@ namespace TgLib
 
         #region Internal fields
         internal readonly Dictionary<string, TgCommand> _registeredCommands = new();
+        internal UserCache cache = null!;
+        internal Interactivity interact = null!;
         #endregion
 
         #region Public methods
@@ -67,7 +69,8 @@ namespace TgLib
         /// </summary>
         public async Task ConnectAsync()
         {
-            TgCache.Initialize(this);
+            cache = new UserCache(this);
+            interact = new Interactivity();
             this.StartReceiving(InternalUpdateHandler, InternalErrorHandler);
             await Task.CompletedTask;
         }
@@ -82,7 +85,7 @@ namespace TgLib
                 return;
             long chatId = message.Chat.Id;
 
-            TgUser user = TgCache.GetOrCreateSession(chatId);
+            TgUser user = cache.GetOrCreateSession(chatId);
             if (messageText.StartsWith('/') && messageText.Length > 2 && !"0123456789\"\'".Contains(messageText[1]))
             {
                 List<string> commandArgs = messageText.Split('\'', '\"')
@@ -99,7 +102,7 @@ namespace TgLib
                     ParameterInfo[] methodArgs = method.GetParameters();
                     if (methodArgs.Length == 1)
                     {
-                        await pair.Value.Invoke(this, user);
+                        _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
                         return;
                     }
                     else
@@ -131,37 +134,35 @@ namespace TgLib
 
                         try
                         {
-                            _ = pair.Value.Invoke(this, user, args);
+                            _ = Task.Run(() => pair.Value.Invoke(this, user, args), clsToken);
                         }
                         catch (CommandErroredException err)
                         {
-                            if (CommandErrored is not null)
-                                _ = CommandErrored(this, err);
+                            _ = CommandErrored?.Invoke(this, err);
                         }
                         return;
                     }
                 }
-                if (CommandErrored is not null)
-                    _ = CommandErrored(this, new CommandNotFoundException(commandName));
+                _ = CommandErrored?.Invoke(this, new CommandNotFoundException(commandName));
             }
             else
             {
-                if (!user.PendingInput)
+                if (interact.TryGetRequest(user, out Request? req))
                 {
-                    // TODO: Интерактивность
+                    interact.SetCompleted(user, messageText);
                 }
                 else
                 {
-                    if (MessageRecieved is not null)
-                        _ = MessageRecieved(this, message);
+                    _ = MessageRecieved?.Invoke(this, message);
                 }
             }
+            await Task.CompletedTask;
         }
 
-        internal async Task InternalErrorHandler(ITelegramBotClient _1, Exception exception, CancellationToken _2)
+        internal Task InternalErrorHandler(ITelegramBotClient _1, Exception exception, CancellationToken _2)
         {
-            if (PollingErrored is not null)
-                await PollingErrored.Invoke(this, exception);
+            _ = PollingErrored?.Invoke(this, exception)!;
+            return Task.CompletedTask;
         }
         #endregion
 

@@ -14,11 +14,6 @@ namespace TgLib
         /// </summary>
         public long ChatID { get; }
         /// <summary>
-        /// Ожидается ли сейчас ввод от пользователя
-        /// </summary>
-        [Obsolete("Будет заменено на новый модуль")]
-        public bool PendingInput { get; set; } = false;
-        /// <summary>
         /// Последнее отправленное/полученное сообщение в этом чате
         /// </summary>
         public Message? LastMessage { get; set; } = null;
@@ -30,7 +25,7 @@ namespace TgLib
 
         #region Public Methods
         /// <summary>
-        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="TgCache.GetOrCreateSession(long)"/></para>
+        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="UserCache.GetOrCreateSession(long)"/></para>
         /// </summary>
         /// <param name="botclient">Клиент бота, с которым связать пользователя</param>
         /// <param name="id">ID чата</param>
@@ -115,7 +110,7 @@ namespace TgLib
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(client, ChatID, PendingInput, LastMessage, disposed);
+            return HashCode.Combine(client, ChatID, LastMessage, disposed);
         }
         #endregion
     }

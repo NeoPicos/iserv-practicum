@@ -42,6 +42,8 @@ namespace Practicum
             public static async Task Hello(CommandContext ctx)
             {
                 await ctx.ResponseAsync($"Hello! This chat id is {ctx.User.ChatID}.");
+                string inp = await ctx.WaitForUserInput();
+                await ctx.ResponseAsync($"You just typed: {inp}");
             }
         }
     }
