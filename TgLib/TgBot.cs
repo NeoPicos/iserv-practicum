@@ -30,7 +30,13 @@ namespace TgLib
 
                 AliasAttribute? aliasAttribute = method.GetCustomAttribute<AliasAttribute>();
                 if (aliasAttribute is not null)
+                {
                     command.Aliases = aliasAttribute.Aliases;
+                    foreach (string i in command.Aliases)
+                    {
+                        _registeredCommands.Add(i, command);
+                    }
+                }
 
                 _registeredCommands.Add(command.Name, command);
             }

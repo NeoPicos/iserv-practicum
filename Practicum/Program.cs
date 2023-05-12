@@ -38,6 +38,7 @@ namespace Practicum
         public class Commands
         {
             [Command]
+            [Alias("hi")]
             public static async Task Hello(CommandContext ctx)
             {
                 await ctx.ResponseAsync($"Hello! This chat id is {ctx.User.ChatID}.");
