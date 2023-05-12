@@ -29,7 +29,7 @@ namespace Practicum
             bot.RegisterCommands<Commands>();
             await bot.ConnectAsync();
 
-            User me = await bot.BaseClient.GetMeAsync();
+            User me = await bot.GetMeAsync();
             Console.WriteLine($"Бот запущен и прослушивает как @{me.Username}");
 
             await Task.Delay(-1);

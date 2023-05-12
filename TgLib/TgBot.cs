@@ -7,17 +7,13 @@ using TgLib.Commands.Exceptions;
 
 namespace TgLib
 {
-    public class TgBot
+    public class TgBot : TelegramBotClient
     {
-        public TelegramBotClient BaseClient { get; internal set; }
         public ReadOnlyDictionary<string, TgCommand> RegisteredCommands { get { return new(_registeredCommands); } }
 
         internal readonly Dictionary<string, TgCommand> _registeredCommands = new();
 
-        public TgBot(string token)
-        {
-            BaseClient = new TelegramBotClient(token);
-        }
+        public TgBot(string token) : base(token){ }
 
         public void RegisterCommands<T>() where T : class
         {
@@ -42,8 +38,8 @@ namespace TgLib
 
         public async Task ConnectAsync()
         {
-            TgCache.Initialize(BaseClient);
-            BaseClient.StartReceiving(InternalUpdateHandler, InternalErrorHandler);
+            TgCache.Initialize(this);
+            this.StartReceiving(InternalUpdateHandler, InternalErrorHandler);
             await Task.CompletedTask;
         }
 
