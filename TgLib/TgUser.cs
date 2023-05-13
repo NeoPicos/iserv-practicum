@@ -46,9 +46,10 @@ namespace TgLib
         {
             try
             {
-                return disposed
-                    ? throw new ObjectDisposedException(GetType().FullName)
-                    : await client.SendTextMessageAsync(ChatID, messageText, entities: entites, cancellationToken: CancellationToken.None);
+                if (disposed)
+                    throw new ObjectDisposedException(GetType().FullName);
+                Message msg = await client.SendTextMessageAsync(ChatID, messageText, entities: entites, cancellationToken: CancellationToken.None);
+                LastMessage = msg;
             }
             catch (Exception ex)
             {
