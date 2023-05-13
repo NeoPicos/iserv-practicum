@@ -9,9 +9,14 @@
             pendingInputs = new();
         }
 
+        public bool TryGetRequest(TgUser user, out Request request)
+        {
+            return pendingInputs.TryGetValue(user, out request);
+        }
+
         public Request AddRequest(TgUser user)
         {
-            if (pendingInputs.TryGetValue(user, out Request value))
+            if (TryGetRequest(user, out Request value))
             {
                 value.Tcs.SetCanceled();
                 pendingInputs.Remove(user);
@@ -21,21 +26,25 @@
             return req;
         }
 
-        public bool TryGetRequest(TgUser user, out Request? req)
-        {
-            req = pendingInputs.FirstOrDefault((x) => x.Key == user).Value;
-            return req != null;
-        }
-
         public void SetCompleted(TgUser user, string result)
         {
-            pendingInputs[user].Tcs.SetResult(result);
-            DeleteRequest(user);
+            if (TryGetRequest(user, out Request req))
+            {
+                req!.Tcs.SetResult(result);
+                DeleteRequest(user);
+            }
         }
 
-        public void DeleteRequest(TgUser user)
+        public void DeleteRequest(TgUser user, bool setEmpty = false)
         {
-            pendingInputs.Remove(user);
+            if (TryGetRequest(user, out Request req))
+            {
+                if (setEmpty)
+                    req!.Tcs.SetResult("");
+                else 
+                    req!.Tcs.SetCanceled();
+                pendingInputs.Remove(user);
+            }
         }
     }
 

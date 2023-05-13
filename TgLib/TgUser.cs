@@ -61,6 +61,15 @@ namespace TgLib
             }
             return new Message();
         }
+
+        /// <summary>
+        /// Отменяет текущее ожидание ответа пользователя
+        /// </summary>
+        /// <param name="setEmpty">Нужно ли вернуть пустую строку (<see langword="true"/>) или отменить ожидание (<see langword="false"/>)</param>
+        public void CancelPendingInput(bool setEmpty)
+        {
+            client.interact.DeleteRequest(this, setEmpty);
+        }
         #endregion
 
         #region IDisposable
