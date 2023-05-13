@@ -5,7 +5,7 @@ using TgLib.Commands;
 
 namespace Practicum
 {
-    internal static class Program
+    public static class Program
     {
         public static void Main()
         {
@@ -25,8 +25,10 @@ namespace Practicum
         {
             string[] settings = System.IO.File.ReadAllLines("settings.cfg");
             TgBot bot = new(settings[0].Trim());
+            DbConnection.Connect(settings[1].Trim());
 
             bot.RegisterCommands<Commands>();
+            bot.CommandErrored += CommandErrored;
             await bot.ConnectAsync();
 
             User me = await bot.GetMeAsync();
@@ -35,16 +37,10 @@ namespace Practicum
             await Task.Delay(-1);
         }
 
-        public class Commands
+        private static async Task CommandErrored(TgBot client, Exception ex)
         {
-            [Command]
-            [Alias("hi")]
-            public static async Task Hello(CommandContext ctx)
-            {
-                await ctx.ResponseAsync($"Hello! This chat id is {ctx.User.ChatID}.");
-                string inp = await ctx.WaitForUserInput();
-                await ctx.ResponseAsync($"You just typed: {inp}");
-            }
+            Console.WriteLine($"{ex}");
+            await Task.CompletedTask;
         }
     }
 }
