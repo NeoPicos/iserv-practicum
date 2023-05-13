@@ -16,11 +16,11 @@ namespace TgLib
         /// <summary>
         /// Словарь всех зарегистрированных команд. Ключ словаря - название команды
         /// </summary>
-        public ReadOnlyDictionary<string, TgCommand> RegisteredCommands { get { return new(_registeredCommands); } }
+        public ReadOnlyCollection<KeyValuePair<string, TgCommand>> RegisteredCommands { get { return new(_registeredCommands); } }
         #endregion
 
         #region Internal fields
-        internal readonly Dictionary<string, TgCommand> _registeredCommands = new();
+        internal readonly List<KeyValuePair<string, TgCommand>> _registeredCommands = new();
         internal UserCache cache = null!;
         internal Interactivity interact = null!;
         #endregion
@@ -56,11 +56,11 @@ namespace TgLib
                     command.Aliases = aliasAttribute.Aliases;
                     foreach (string i in command.Aliases)
                     {
-                        _registeredCommands.Add(i, command);
+                        _registeredCommands.Add(new(i, command));
                     }
                 }
 
-                _registeredCommands.Add(command.Name, command);
+                _registeredCommands.Add(new(command.Name, command));
             }
         }
 
