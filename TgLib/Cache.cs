@@ -6,7 +6,7 @@ namespace TgLib
     {
         private readonly List<TgUser> cache = new();
         private readonly TgBot client = null!;
-        private readonly System.Timers.Timer autoclearTimer = new(TimeSpan.FromMinutes(1));
+        private readonly System.Timers.Timer autoclearTimer = new(TimeSpan.FromMinutes(10));
 
         public UserCache(TgBot client)
         {
