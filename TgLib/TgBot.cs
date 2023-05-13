@@ -103,7 +103,14 @@ namespace TgLib
                     ParameterInfo[] methodArgs = method.GetParameters();
                     if (methodArgs.Length == 1)
                     {
-                        _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
+                        try
+                        {
+                            _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
+                        }
+                        catch (Exception err)
+                        {
+                            _ = CommandErrored?.Invoke(this, err);
+                        }
                         return;
                     }
                     else
@@ -137,7 +144,7 @@ namespace TgLib
                         {
                             _ = Task.Run(() => pair.Value.Invoke(this, user, args), clsToken);
                         }
-                        catch (CommandErroredException err)
+                        catch (Exception err)
                         {
                             _ = CommandErrored?.Invoke(this, err);
                         }
