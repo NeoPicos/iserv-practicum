@@ -2,7 +2,7 @@
 {
     internal class Interactivity
     {
-        private readonly Dictionary<TgUser, Request> pendingInputs;
+        public readonly Dictionary<TgUser, Request> pendingInputs;
 
         public Interactivity()
         {

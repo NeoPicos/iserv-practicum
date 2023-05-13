@@ -17,10 +17,14 @@ namespace TgLib
         /// Последнее отправленное/полученное сообщение в этом чате
         /// </summary>
         public Message? LastMessage { get; set; } = null;
+        /// <summary>
+        /// Ожидается ли ввод от пользователя
+        /// </summary>
+        public bool IsPendingInput { get { return client.interact.pendingInputs.Any((x) => x.Key == this); } }
         #endregion
 
         #region Internal fields
-        internal readonly ITelegramBotClient client;
+        internal readonly TgBot client;
         #endregion
 
         #region Public Methods
@@ -29,7 +33,7 @@ namespace TgLib
         /// </summary>
         /// <param name="botclient">Клиент бота, с которым связать пользователя</param>
         /// <param name="id">ID чата</param>
-        public TgUser(ITelegramBotClient botclient, long id)
+        public TgUser(TgBot botclient, long id)
         {
             client = botclient;
             ChatID = id;
