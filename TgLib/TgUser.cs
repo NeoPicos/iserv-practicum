@@ -25,7 +25,7 @@ namespace TgLib
 
         #region Public Methods
         /// <summary>
-        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="UserCache.GetOrCreateSession(long)"/></para>
+        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="UserCache.GetOrCreateUser(long)"/></para>
         /// </summary>
         /// <param name="botclient">Клиент бота, с которым связать пользователя</param>
         /// <param name="id">ID чата</param>

@@ -85,7 +85,7 @@ namespace TgLib
                 return;
             long chatId = message.Chat.Id;
 
-            TgUser user = cache.GetOrCreateSession(chatId);
+            TgUser user = cache.GetOrCreateUser(chatId);
             if (messageText.StartsWith('/') && messageText.Length > 2 && !"0123456789\"\'".Contains(messageText[1]))
             {
                 List<string> commandArgs = messageText.Split('\'', '\"')

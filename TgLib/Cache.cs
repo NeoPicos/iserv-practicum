@@ -17,20 +17,20 @@ namespace TgLib
             autoclearTimer.Start();
         }
 
-        public TgUser GetOrCreateSession(long chatid)
+        public TgUser GetOrCreateUser(long chatid)
         {
-            TgUser? session = cache.FirstOrDefault((x) => x.ChatID == chatid);
-            if (session is null)
+            TgUser? user = cache.FirstOrDefault((x) => x.ChatID == chatid);
+            if (user is null)
             {
-                session = new TgUser(client, chatid);
-                cache.Add(session);
+                user = new TgUser(client, chatid);
+                cache.Add(user);
             }
-            return session;
+            return user;
         }
 
-        public void DeleteSession(TgUser client)
+        public void DeleteUser(TgUser client)
         {
-            UncacheSession(client);
+            UncacheUser(client);
         }
 
         private void Autoclear(object? sender, ElapsedEventArgs e)
@@ -39,12 +39,12 @@ namespace TgLib
             {
                 if ((DateTime.Now - i.LastMessage?.Date) > TimeSpan.FromMinutes(10))
                 {
-                    UncacheSession(i);
+                    UncacheUser(i);
                 }
             }
         }
 
-        private void UncacheSession(TgUser user)
+        private void UncacheUser(TgUser user)
         {
             cache.Remove(user);
             client.interact.DeleteRequest(user);
