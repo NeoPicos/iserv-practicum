@@ -109,7 +109,7 @@ namespace TgLib
             /// </summary>
             /// <param name="message">Отправляемое сообщение</param>
             /// <returns>Экземпляр отправленного сообщения</returns>
-            public async Task<Message> ResponseAsync(string message)
+            public async Task<Message> RespondAsync(string message)
             {
                 return await User.SendMessage(message);
             }
