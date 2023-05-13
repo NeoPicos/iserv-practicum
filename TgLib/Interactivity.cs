@@ -9,16 +9,17 @@
             pendingInputs = new();
         }
 
-        public bool TryGetRequest(TgUser user, out Request request)
+        public bool TryGetRequest(TgUser user, out Request? request)
         {
-            return pendingInputs.TryGetValue(user, out request);
+            request = pendingInputs.FirstOrDefault((x) => x.Key == user).Value;
+            return request is not null;
         }
 
         public Request AddRequest(TgUser user)
         {
-            if (TryGetRequest(user, out Request value))
+            if (TryGetRequest(user, out Request? value))
             {
-                value.Tcs.SetCanceled();
+                value!.Tcs.SetCanceled();
                 pendingInputs.Remove(user);
             }
             Request req = new(user);
@@ -28,7 +29,7 @@
 
         public void SetCompleted(TgUser user, string result)
         {
-            if (TryGetRequest(user, out Request req))
+            if (TryGetRequest(user, out Request? req))
             {
                 req!.Tcs.SetResult(result);
                 DeleteRequest(user);
@@ -37,7 +38,7 @@
 
         public void DeleteRequest(TgUser user, bool setEmpty = false)
         {
-            if (TryGetRequest(user, out Request req))
+            if (TryGetRequest(user, out Request? req))
             {
                 if (setEmpty)
                     req!.Tcs.SetResult("");
@@ -48,7 +49,7 @@
         }
     }
 
-    internal struct Request
+    internal class Request
     {
         public TgUser User;
         public TaskCompletionSource<string> Tcs;

@@ -148,7 +148,7 @@ namespace TgLib
             }
             else
             {
-                if (interact.TryGetRequest(user, out Request req))
+                if (interact.TryGetRequest(user, out Request? req))
                 {
                     interact.SetCompleted(user, messageText);
                 }
