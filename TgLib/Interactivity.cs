@@ -2,7 +2,7 @@
 {
     internal class Interactivity
     {
-        public readonly Dictionary<TgUser, Request> pendingInputs;
+        public readonly Dictionary<long, Request> pendingInputs;
 
         public Interactivity()
         {
@@ -11,19 +11,14 @@
 
         public bool TryGetRequest(TgUser user, out Request? request)
         {
-            request = pendingInputs.FirstOrDefault((x) => x.Key == user).Value;
-            return request is not null;
+            return pendingInputs.TryGetValue(user.ChatID, out request);
         }
 
         public Request AddRequest(TgUser user)
         {
-            if (TryGetRequest(user, out Request? value))
-            {
-                value!.Tcs.SetCanceled();
-                pendingInputs.Remove(user);
-            }
+            pendingInputs.Remove(user.ChatID);
             Request req = new(user);
-            pendingInputs.Add(user, req);
+            pendingInputs.Add(user.ChatID, req);
             return req;
         }
 
@@ -31,21 +26,14 @@
         {
             if (TryGetRequest(user, out Request? req))
             {
-                req!.Tcs.SetResult(result);
                 DeleteRequest(user);
+                req!.Tcs.SetResult(result);
             }
         }
 
-        public void DeleteRequest(TgUser user, bool setEmpty = false)
+        public void DeleteRequest(TgUser user)
         {
-            if (TryGetRequest(user, out Request? req))
-            {
-                if (setEmpty)
-                    req!.Tcs.SetResult("");
-                else 
-                    req!.Tcs.SetCanceled();
-                pendingInputs.Remove(user);
-            }
+            pendingInputs.Remove(user.ChatID);
         }
     }
 

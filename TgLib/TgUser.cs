@@ -20,7 +20,7 @@ namespace TgLib
         /// <summary>
         /// Ожидается ли ввод от пользователя
         /// </summary>
-        public bool IsPendingInput { get { return client.interact.pendingInputs.Any((x) => x.Key == this); } }
+        public bool IsPendingInput { get { return client.interact.pendingInputs.Any((x) => x.Key == ChatID); } }
         #endregion
 
         #region Internal fields
@@ -65,10 +65,9 @@ namespace TgLib
         /// <summary>
         /// Отменяет текущее ожидание ответа пользователя
         /// </summary>
-        /// <param name="setEmpty">Нужно ли вернуть пустую строку (<see langword="true"/>) или отменить ожидание (<see langword="false"/>)</param>
-        public void CancelPendingInput(bool setEmpty)
+        public void CancelPendingInput()
         {
-            client.interact.DeleteRequest(this, setEmpty);
+            client.interact.DeleteRequest(this);
         }
         #endregion
 
