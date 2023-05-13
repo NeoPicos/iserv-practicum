@@ -172,7 +172,7 @@ namespace TgLib
         /// Делегат, описывающий обработчик ошибок цикла событий
         /// </summary>
         /// <param name="client">Клиент бота, в котором возникло исключение</param>
-        /// <param name="ex">Вызыванное исключение</param>
+        /// <param name="ex">Вызванное исключение</param>
         public delegate Task PollingErrorHandler(TgBot client, Exception ex);
 
         /// <summary>
@@ -186,7 +186,7 @@ namespace TgLib
         /// Делегат, описывающий обработчик ошибок выполнения команды
         /// </summary>
         /// <param name="client">Клиент бота, в котором возникло исключение</param>
-        /// <param name="ex">Вызыванное исключение</param>
+        /// <param name="ex">Вызванное исключение</param>
         public delegate Task CommandErroredHandler(TgBot client, Exception ex);
 
         /// <summary>
