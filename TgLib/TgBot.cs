@@ -79,6 +79,12 @@ namespace TgLib
         #region Internal methods
         internal async Task InternalUpdateHandler(ITelegramBotClient client, Update update, CancellationToken clsToken)
         {
+            if (update.CallbackQuery is { } callback)
+            {
+                CallbackQueryRecieved?.Invoke(this, cache.GetOrCreateUser(callback.From.Id), callback );
+                return;
+            }
+
             if (update.Message is not { } message)
                 return;
             if (message.Text is not { } messageText)
@@ -189,6 +195,15 @@ namespace TgLib
         public delegate Task CommandErroredHandler(CommandContext client, Exception ex);
 
         /// <summary>
+        /// Делегат, описывающий обработчик полученного callback запроса
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="user"></param>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public delegate Task CallbackQueryRecievedHandler(TgBot sender, TgUser user, CallbackQuery query);
+
+        /// <summary>
         /// Вызывается, когда возникает ошибка в цикле событий
         /// </summary>
         public event PollingErrorHandler? PollingErrored;
@@ -202,6 +217,11 @@ namespace TgLib
         /// Вызывается, когда возникает ошибка во время выполнения команды
         /// </summary>
         public event CommandErroredHandler? CommandErrored;
+
+        /// <summary>
+        /// Вызывается, когда получен новый callback запрос
+        /// </summary>
+        public event CallbackQueryRecievedHandler? CallbackQueryRecieved;
         #endregion
     }
 }
