@@ -52,9 +52,9 @@ namespace TgLib
                 {
                     await (Task)Method.Invoke(null, arguments.ToArray())!;
                 }
-                catch (TargetInvocationException ex)
+                catch (Exception ex)
                 {
-                    throw new CommandErroredException(ex.InnerException!.Message, ex.InnerException, ctx);
+                    ctx.Client.RaiseCommandErrored(ctx, ex);
                 }
             }
             #endregion

@@ -2,6 +2,7 @@
 using Telegram.Bot;
 using TgLib;
 using TgLib.Commands;
+using TgLib.Commands.Exceptions;
 
 namespace Practicum
 {
@@ -37,10 +38,17 @@ namespace Practicum
             await Task.Delay(-1);
         }
 
-        private static async Task CommandErrored(TgBot client, Exception ex)
+        private static async Task CommandErrored(CommandContext ctx, Exception ex)
         {
-            Console.WriteLine($"{ex}");
-            await Task.CompletedTask;
+            if(ex is CommandNotFoundException)
+            {
+                await ctx.RespondAsync("Я не понял твоей команды :(");
+            }
+            else
+            {
+                await ctx.RespondAsync("Во время выполнения команды произошла ошибка...");
+                Console.WriteLine($"Err: {ex.InnerException!.Message}");
+            }
         }
     }
 }

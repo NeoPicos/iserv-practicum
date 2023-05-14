@@ -103,14 +103,7 @@ namespace TgLib
                     ParameterInfo[] methodArgs = method.GetParameters();
                     if (methodArgs.Length == 1)
                     {
-                        try
-                        {
-                            _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
-                        }
-                        catch (Exception err)
-                        {
-                            _ = CommandErrored?.Invoke(this, err);
-                        }
+                        _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
                         return;
                     }
                     else
@@ -140,18 +133,11 @@ namespace TgLib
                             continue;
                         }
 
-                        try
-                        {
-                            _ = Task.Run(() => pair.Value.Invoke(this, user, args), clsToken);
-                        }
-                        catch (Exception err)
-                        {
-                            _ = CommandErrored?.Invoke(this, err);
-                        }
+                        _ = Task.Run(() => pair.Value.Invoke(this, user, args), clsToken);
                         return;
                     }
                 }
-                _ = CommandErrored?.Invoke(this, new CommandNotFoundException(commandName));
+                _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
             }
             else
             {
@@ -171,6 +157,12 @@ namespace TgLib
         {
             _ = PollingErrored?.Invoke(this, exception)!;
             return Task.CompletedTask;
+        }
+
+        // TODO: Наверное, это не должно быть тут
+        internal void RaiseCommandErrored(CommandContext ctx, Exception ex)
+        {
+            _ = CommandErrored?.Invoke(ctx, ex);
         }
         #endregion
 
@@ -194,7 +186,7 @@ namespace TgLib
         /// </summary>
         /// <param name="client">Клиент бота, в котором возникло исключение</param>
         /// <param name="ex">Вызванное исключение</param>
-        public delegate Task CommandErroredHandler(TgBot client, Exception ex);
+        public delegate Task CommandErroredHandler(CommandContext client, Exception ex);
 
         /// <summary>
         /// Вызывается, когда возникает ошибка в цикле событий

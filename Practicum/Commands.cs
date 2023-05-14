@@ -134,6 +134,7 @@ namespace Practicum
         {
             await ctx.RespondAsync("Список команд ещё не готов к использованию");
             // await ctx.RespondAsync("⚠ There is no help. **START RUNNING.**");
+            // https://i.imgur.com/8gJSSGr.png
         }
 
         [Command]
