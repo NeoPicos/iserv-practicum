@@ -30,7 +30,7 @@ namespace Practicum
 
             bot.RegisterCommands<Commands>();
             bot.CommandErrored += CommandErrored;
-            bot.CallbackQueryRecieved += Callbacks.CallbackQueryRecived;
+            bot.CallbackQueryRecieved += Callbacks.CallbackQueryRecieved;
 
             await bot.ConnectAsync();
             User me = await bot.GetMeAsync();

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Telegram.Bot.Types.ReplyMarkups;
 using TgLib.Commands;
 
 namespace Practicum
@@ -29,6 +30,8 @@ namespace Practicum
             DbConnection.ExecuteNonQuery(
                 $"INSERT INTO users (`id`, `name`) VALUES ({ctx.User.ChatID}, @NAME) ON DUPLICATE KEY UPDATE `name`=@NAME;",
                 new() { { "@NAME", name } });
+
+            ctx.Client.InvokeCommand("Menu", ctx.User, new());
         }
 
         [Command]
@@ -38,10 +41,17 @@ namespace Practicum
             string name = DbConnection.ExecuteScalar($"SELECT `name` FROM users WHERE `id`={ctx.User.ChatID}").ToString()!;
             string response = $"Здравствуйте, {name}!\n\n";
 
-            response += "У вас 0 задач на сегодня\n\n"; // TODO: Уведомления на текущий день
+            response += "У вас ??? задач на сегодня\n\n"; // TODO: Уведомления на текущий день
 
-            response += $"/events - Посмотреть все события\n/newEvent - Создать новое событие"; // TODO: Сделать это в виде кнопок
-            await ctx.RespondAsync(response);
+            InlineKeyboardMarkup keyboard = new(new[] {
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Все события", "events"),
+            },
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Добавить новое событие", "newEvent"),
+            } });
+
+            await ctx.RespondAsync(response, keyboard);
         }
 
         [Command]
@@ -52,17 +62,27 @@ namespace Practicum
                 await ctx.RespondAsync("Неверно указана страница!");
                 return;
             }
-            int offset = (page - 1) * 10;
-            List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `owner`={ctx.User.ChatID} LIMIT 10 OFFSET {offset}");
-            string response = $"Ваши напоминания | Страница {page} \n";
+            int offset = (page - 1) * 5;
+            List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `owner`={ctx.User.ChatID} LIMIT 5 OFFSET {offset}");
+            string response = $"Ваши напоминания | Страница [{page}] \n";
             offset++;
             foreach (string?[] reminder in table)
             {
                 //            {Счётчик}.   {Заголовок}  - {Описание}
                 response += $"{offset++}. {reminder[1]} - {reminder[2]}\n";
             }
-            response += "\n/back - Вернуться в меню";
-            await ctx.RespondAsync(response);
+
+            InlineKeyboardMarkup keyboard = new(new[] {
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("<-", "left"),
+                InlineKeyboardButton.WithCallbackData("->", "right"),
+            },
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Назад в меню", "menu"),
+            } });
+
+            
+            await ctx.RespondAsync(response, keyboard);
         }
 
         [Command]
