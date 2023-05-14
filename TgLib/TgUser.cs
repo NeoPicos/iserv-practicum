@@ -39,7 +39,6 @@ namespace TgLib
             ChatID = id;
         }
 
-        // TODO: Прикрепление вложений
         /// <summary>
         /// Отправить сообщение в чат с пользователем
         /// </summary>
@@ -48,18 +47,26 @@ namespace TgLib
         /// <returns>Отправленное сообщение</returns>
         public async Task<Message> SendMessage(string messageText, IEnumerable<MessageEntity>? entites = null)
         {
-            try
-            {
-                if (disposed)
-                    throw new ObjectDisposedException(GetType().FullName);
-                Message msg = await client.SendTextMessageAsync(ChatID, messageText, entities: entites, cancellationToken: CancellationToken.None);
-                LastMessage = msg;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-            return new Message();
+            if (disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+            Message msg = await client.SendTextMessageAsync(ChatID, messageText, entities: entites);
+            LastMessage = msg;
+            return msg;
+        }
+
+        /// <summary>
+        /// Отправить простой документ в чат с пользователем
+        /// </summary>
+        /// <param name="document">Документ для отправки</param>
+        /// <param name="caption">Комментарий к отправленному файлу</param>
+        /// <returns>Отправленное сообщение</returns>
+        public async Task<Message> SendFile(InputFile document, string caption="")
+        {
+            if (disposed)
+                throw new ObjectDisposedException(GetType().FullName);
+            Message msg = await client.SendDocumentAsync(ChatID, document, caption: caption);
+            LastMessage = msg;
+            return msg;
         }
 
         /// <summary>
