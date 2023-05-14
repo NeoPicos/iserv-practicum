@@ -1,5 +1,6 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TgLib
 {
@@ -43,13 +44,13 @@ namespace TgLib
         /// Отправить сообщение в чат с пользователем
         /// </summary>
         /// <param name="messageText">Текст сообщения</param>
-        /// <param name="entites">Приложения к сообщению</param>
+        /// <param name="replyMarkup">Приложения к сообщению</param>
         /// <returns>Отправленное сообщение</returns>
-        public async Task<Message> SendMessage(string messageText, IEnumerable<MessageEntity>? entites = null)
+        public async Task<Message> SendMessage(string messageText, IReplyMarkup? replyMarkup = null)
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            Message msg = await client.SendTextMessageAsync(ChatID, messageText, entities: entites);
+            Message msg = await client.SendTextMessageAsync(ChatID, messageText, replyMarkup: replyMarkup);
             LastMessage = msg;
             return msg;
         }
