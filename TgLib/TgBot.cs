@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Reflection;
 using Telegram.Bot;
+using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using TgLib.Commands;
 using TgLib.Commands.Exceptions;
@@ -71,7 +72,8 @@ namespace TgLib
         {
             cache = new UserCache(this);
             interact = new Interactivity();
-            this.StartReceiving(InternalUpdateHandler, InternalErrorHandler);
+            ReceiverOptions op = new ReceiverOptions() { ThrowPendingUpdates = true };
+            this.StartReceiving(InternalUpdateHandler, InternalErrorHandler, op);
             await Task.CompletedTask;
         }
         #endregion
@@ -81,7 +83,7 @@ namespace TgLib
         {
             if (update.CallbackQuery is { } callback)
             {
-                CallbackQueryRecieved?.Invoke(this, cache.GetOrCreateUser(callback.From.Id), callback );
+                CallbackQueryRecieved?.Invoke(this, cache.GetOrCreateUser(callback.From.Id), callback);
                 return;
             }
 
@@ -140,7 +142,7 @@ namespace TgLib
         {
             foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
             {
-                if(InvokeCommand(pair.Value, user, commandArgs))
+                if (InvokeCommand(pair.Value, user, commandArgs))
                     return;
             }
             _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
