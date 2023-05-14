@@ -141,7 +141,7 @@ namespace TgLib
             foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
             {
                 if(InvokeCommand(pair.Value, user, commandArgs))
-                    break;
+                    return;
             }
             _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
         }
