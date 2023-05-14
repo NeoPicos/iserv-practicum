@@ -56,11 +56,11 @@ namespace TgLib
                     command.Aliases = aliasAttribute.Aliases;
                     foreach (string i in command.Aliases)
                     {
-                        _registeredCommands.Add(new(i, command));
+                        _registeredCommands.Add(new(i.ToLower(), command));
                     }
                 }
 
-                _registeredCommands.Add(new(command.Name, command));
+                _registeredCommands.Add(new(command.Name.ToLower(), command));
             }
         }
 
@@ -102,48 +102,7 @@ namespace TgLib
                         .ToList();
                 string commandName = commandArgs[0][1..].ToLower();
                 commandArgs.RemoveAt(0);
-
-                foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    MethodInfo method = pair.Value.Method;
-                    ParameterInfo[] methodArgs = method.GetParameters();
-                    if (methodArgs.Length == 1)
-                    {
-                        _ = Task.Run(() => pair.Value.Invoke(this, user), clsToken);
-                        return;
-                    }
-                    else
-                    {
-                        if (commandArgs.Count < methodArgs.Length - 1)
-                            continue;
-                        List<object> args = new();
-                        try
-                        {
-                            for (int i = 0; i < methodArgs.Length - 1; i++)
-                            {
-                                ParameterInfo methodArg = methodArgs[i + 1];
-                                if (methodArg.GetCustomAttribute<RemainingTextAttribute>() is not null)
-                                {
-                                    string text = "";
-                                    while (i < commandArgs.Count)
-                                        text += commandArgs[i++] + " ";
-                                    args.Add(text[..(text.Length - 1)]);
-                                    break;
-                                }
-                                else
-                                    args.Add(Convert.ChangeType(commandArgs[i], methodArg.ParameterType));
-                            }
-                        }
-                        catch
-                        {
-                            continue;
-                        }
-
-                        _ = Task.Run(() => pair.Value.Invoke(this, user, args), clsToken);
-                        return;
-                    }
-                }
-                _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
+                InvokeCommand(commandName, user, commandArgs);
             }
             else
             {
@@ -165,10 +124,66 @@ namespace TgLib
             return Task.CompletedTask;
         }
 
-        // TODO: Наверное, это не должно быть тут
+        // TODO: Куда-нибудь вытащить следующие три метода
         internal void RaiseCommandErrored(CommandContext ctx, Exception ex)
         {
             _ = CommandErrored?.Invoke(ctx, ex);
+        }
+
+        /// <summary>
+        /// Вызывает команду с указанным названием и аргументами
+        /// </summary>
+        /// <param name="commandName"></param>
+        /// <param name="commandArgs"></param>
+        /// <param name="user"></param>
+        public void InvokeCommand(string commandName, TgUser user, List<string> commandArgs)
+        {
+            foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                InvokeCommand(pair.Value, user, commandArgs);
+            }
+            _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
+        }
+
+        internal void InvokeCommand(TgCommand command, TgUser user, List<string> commandArgs)
+        {
+            MethodInfo method = command.Method;
+            ParameterInfo[] methodArgs = method.GetParameters();
+            if (methodArgs.Length == 1)
+            {
+                _ = Task.Run(() => command.Invoke(this, user));
+                return;
+            }
+            else
+            {
+                if (commandArgs.Count < methodArgs.Length - 1)
+                    return;
+                List<object> args = new();
+                try
+                {
+                    for (int i = 0; i < methodArgs.Length - 1; i++)
+                    {
+                        ParameterInfo methodArg = methodArgs[i + 1];
+                        if (methodArg.GetCustomAttribute<RemainingTextAttribute>() is not null)
+                        {
+                            string text = "";
+                            while (i < commandArgs.Count)
+                                text += commandArgs[i++] + " ";
+                            args.Add(text[..(text.Length - 1)]);
+                            break;
+                        }
+                        else
+                            args.Add(Convert.ChangeType(commandArgs[i], methodArg.ParameterType));
+                    }
+                }
+                catch
+                {
+                    return;
+                }
+
+                _ = Task.Run(() => command.Invoke(this, user, args));
+                return;
+            }
         }
         #endregion
 
