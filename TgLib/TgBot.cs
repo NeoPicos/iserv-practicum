@@ -140,24 +140,25 @@ namespace TgLib
         {
             foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
             {
-                InvokeCommand(pair.Value, user, commandArgs);
+                if(InvokeCommand(pair.Value, user, commandArgs))
+                    break;
             }
             _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
         }
 
-        internal void InvokeCommand(TgCommand command, TgUser user, List<string> commandArgs)
+        internal bool InvokeCommand(TgCommand command, TgUser user, List<string> commandArgs)
         {
             MethodInfo method = command.Method;
             ParameterInfo[] methodArgs = method.GetParameters();
             if (methodArgs.Length == 1)
             {
                 _ = Task.Run(() => command.Invoke(this, user));
-                return;
+                return true;
             }
             else
             {
                 if (commandArgs.Count < methodArgs.Length - 1)
-                    return;
+                    return false;
                 List<object> args = new();
                 try
                 {
@@ -178,11 +179,11 @@ namespace TgLib
                 }
                 catch
                 {
-                    return;
+                    return false;
                 }
 
                 _ = Task.Run(() => command.Invoke(this, user, args));
-                return;
+                return true;
             }
         }
         #endregion
