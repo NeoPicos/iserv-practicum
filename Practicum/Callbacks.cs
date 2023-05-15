@@ -15,7 +15,9 @@ namespace Practicum
                     sender.InvokeCommand(query.Data, user, new());
                     break;
                 case "left":
+                case "toleft":
                 case "right":
+                case "toright":
                     ChangePage(sender, user, query);
                     break;
             }
@@ -26,11 +28,13 @@ namespace Practicum
         {
             Message msg = query.Message!;
             string text = msg.Text!;
-            int page = int.Parse(text[(text.IndexOf('[') + 1)..text.IndexOf(']')]);
+            int page = int.Parse(text[(text.IndexOf('[') + 1)..text.IndexOf('/')]);
             if (query.Data == "left")
                 page = Math.Max(page - 1, 1);
-            else
+            else if (query.Data == "right")
                 page = Math.Min(page + 1, 255);
+            else
+                page = query.Data == "toleft" ? 1 : 255;
 
             sender.InvokeCommand("events", user, new() { page.ToString() });
         }

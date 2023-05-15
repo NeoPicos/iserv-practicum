@@ -48,7 +48,7 @@ namespace Practicum
             else
             {
                 await ctx.RespondAsync("Во время выполнения команды произошла ошибка...");
-                Console.WriteLine($"Err: {ex.InnerException!.Message}");
+                Console.WriteLine($"Err: {ex.GetType()} - {ex.Message}");
             }
         }
     }

@@ -1,4 +1,6 @@
 ﻿using System.Globalization;
+using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgLib.Commands;
 
@@ -56,7 +58,16 @@ namespace Practicum
                 InlineKeyboardButton.WithCallbackData("Добавить новое событие", "newEvent"),
             } });
 
-            await ctx.RespondAsync(response, keyboard);
+            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot)
+            {
+                try
+                {
+                    await ctx.Client.EditMessageTextAsync(new ChatId(ctx.User.ChatID), (int)(ctx.User.LastMessage?.MessageId)!, response, replyMarkup: keyboard);
+                }
+                catch (Telegram.Bot.Exceptions.ApiRequestException) { }
+            }
+            else
+                await ctx.RespondAsync(response, keyboard);
         }
 
         [Command]
@@ -69,7 +80,7 @@ namespace Practicum
             }
             int offset = (page - 1) * 5;
             List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `owner`={ctx.User.ChatID} LIMIT 5 OFFSET {offset}");
-            string response = $"Ваши напоминания | Страница [{page}] \n";
+            string response = $"Ваши напоминания | Страница [{page}/???] \n";
             offset++;
             foreach (string?[] reminder in table)
             {
@@ -79,15 +90,25 @@ namespace Practicum
 
             InlineKeyboardMarkup keyboard = new(new[] {
             new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("<<", "toleft"),
                 InlineKeyboardButton.WithCallbackData("<-", "left"),
                 InlineKeyboardButton.WithCallbackData("->", "right"),
+                InlineKeyboardButton.WithCallbackData(">>", "toright"),
             },
             new InlineKeyboardButton[]{
                 InlineKeyboardButton.WithCallbackData("Назад в меню", "menu"),
             } });
 
-            
-            await ctx.RespondAsync(response, keyboard);
+            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot)
+            {
+                try
+                {
+                    await ctx.Client.EditMessageTextAsync(new ChatId(ctx.User.ChatID), (int)(ctx.User.LastMessage?.MessageId)!, response, replyMarkup: keyboard);
+                }
+                catch (Telegram.Bot.Exceptions.ApiRequestException) { }
+            }
+            else
+                await ctx.RespondAsync(response, keyboard);
         }
 
         [Command]
