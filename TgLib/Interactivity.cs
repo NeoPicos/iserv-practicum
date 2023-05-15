@@ -34,13 +34,14 @@
             }
         }
 
-        public void DeleteRequest(TgUser user)
+        public bool DeleteRequest(TgUser user)
         {
             if(PendingInputs.TryGetValue(user.ChatID, out Request? value))
             {
                 value.Tcs.SetCanceled();
-                PendingInputs.Remove(user.ChatID);
+                return PendingInputs.Remove(user.ChatID);
             }
+            return false;
         }
         #endregion
     }

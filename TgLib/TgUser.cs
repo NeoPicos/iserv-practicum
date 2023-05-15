@@ -73,9 +73,10 @@ namespace TgLib
         /// <summary>
         /// Отменяет текущее ожидание ответа пользователя
         /// </summary>
-        public void CancelPendingInput()
+        public void CancelPendingInput(bool notify = false)
         {
-            _client._interactivity.DeleteRequest(this);
+            if(_client._interactivity.DeleteRequest(this) && notify)
+                _ = SendMessage("Действие отменено.");
         }
         #endregion
 
