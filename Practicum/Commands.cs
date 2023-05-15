@@ -16,6 +16,10 @@ namespace Practicum
         [Command]
         public static async Task Start(CommandContext ctx)
         {
+            DbConnection.ExecuteNonQuery(
+    $"INSERT INTO users (`id`, `name`) VALUES ({ctx.User.ChatID}, @NAME) ON DUPLICATE KEY UPDATE `name`=@NAME;",
+    new() { { "@NAME", ctx.User.ChatID.ToString() } });
+
             await ctx.RespondAsync("👋 Привет! Здесь скоро будет информация об использовании бота и его функциях.");
             await Task.Delay(1500);
             await ctx.RespondAsync("📝 Скажи, как мне к тебе обращаться?");
@@ -38,7 +42,8 @@ namespace Practicum
         [Alias("Menu")]
         public static async Task MainMenu(CommandContext ctx)
         {
-            string?[] data = DbConnection.ExecuteReader($"SELECT u.name, count(r.title) FROM users u JOIN reminders r ON u.id = r.owner WHERE r.owner = {ctx.User.ChatID} AND DATE(r.datedue) = CURDATE();")[0];
+            string?[] data = DbConnection.ExecuteReader(
+                $"SELECT u.name, COUNT(r.title) FROM users u LEFT JOIN reminders r ON u.id = r.owner AND DATE(r.datedue) = CURDATE() WHERE u.id = {ctx.User.ChatID} GROUP BY u.name;")[0];
             string response = $"Здравствуйте, {data[0]}!\n\n";
 
             response += $"У вас {data[1]} задач на сегодня\n\n";
