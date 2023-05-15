@@ -20,6 +20,9 @@ namespace Practicum
                 case "toright":
                     ChangePage(sender, user, query);
                     break;
+                case "cancel":
+                    user.CancelPendingInput(true); 
+                    break;
             }
             await Task.CompletedTask;
         }

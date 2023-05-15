@@ -120,14 +120,16 @@ namespace Practicum
         [Command]
         public static async Task NewEvent(CommandContext ctx)
         {
+            // Кнопка отмены, общая для всех шагов
+            InlineKeyboardMarkup cancelkeyboard = new(new[] { new InlineKeyboardButton[]{ InlineKeyboardButton.WithCallbackData("Отменить создание", "cancel") } });
             // 1. Название
             await ctx.RespondAsync("**Придумай заголовок к событию.**\n\nХороший заголовок - очень краткое описание того, что ты хочешь сделать" +
-                "Например, \"Сходить к стоматологу\" или \"Купить корм собаке\". Максимум - 64 символа!");
+                "Например, \"Сходить к стоматологу\" или \"Купить корм собаке\". Максимум - 64 символа!", cancelkeyboard);
             string eventTitle = await ctx.WaitForUserInput();
             while (eventTitle.Length <= 3 || eventTitle.Length > 64)
             {
                 await ctx.RespondAsync($"Заголовок слишком {(eventTitle.Length <= 3 ? "короткий" : "длинный")}! \n" +
-                    $"Придумай другой или используй /cancel для отмены");
+                    $"Придумай другой или используй /cancel для отмены", cancelkeyboard);
                 eventTitle = await ctx.WaitForUserInput();
             }
 
@@ -135,13 +137,13 @@ namespace Practicum
             await ctx.RespondAsync("Отлично! Теперь можешь вписать **описание** этого события.\n\n" +
                 "Включи сюда любую информацию, что посчитаешь нужной\n" +
                 "Лимит - 4096 символов (полное сообщение!)\n" +
-                "Или пропусти этот шаг с помощью команды /skip");
+                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard);
             string eventDesc = await ctx.WaitForUserInput();
 
             // 3. Напоминание
             await ctx.RespondAsync("Если тебе нужно напомнить об этом событии, укажи время и дату, когда это сделать!\n\n" +
                 "Формат - дд.мм.гг чч:мм\n" +
-                "Или пропусти этот шаг с помощью команды /skip");
+                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard);
             string eventDT = await ctx.WaitForUserInput();
             DateTime eventParsedDT = DateTime.MaxValue;
             if (eventDT != "skip")
@@ -150,7 +152,7 @@ namespace Practicum
                 {
                     await ctx.RespondAsync("Похоже что ты ошибся при вводе даты/времени. К примеру, вот текущие:\n" +
                         $"{DateTime.Now:dd.MM.yy HH:mm}\n\n" +
-                        "Используй /skip чтобы не записывать напоминание");
+                        "Используй /skip чтобы не записывать напоминание", cancelkeyboard);
                     eventDT = await ctx.WaitForUserInput();
                 }
             }
