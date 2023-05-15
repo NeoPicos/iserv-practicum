@@ -5,7 +5,6 @@ namespace Practicum
 {
     internal static class Callbacks
     {
-        // TODO: Реализовать обработку запросов в TgBot.
         internal static async Task CallbackQueryRecieved(TgBot sender, TgUser user, CallbackQuery query)
         {
             switch (query.Data)
