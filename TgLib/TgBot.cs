@@ -90,6 +90,8 @@ namespace TgLib
         /// <param name="user"></param>
         public void InvokeCommand(string commandName, TgUser user, List<string> commandArgs)
         {
+            if (user.IsPendingInput)
+                user.CancelPendingInput();
             foreach (KeyValuePair<string, TgCommand> pair in _registeredCommands.Where((x) => x.Key.Equals(commandName, StringComparison.InvariantCultureIgnoreCase)))
             {
                 if (InvokeCommand(pair.Value, user, commandArgs))
