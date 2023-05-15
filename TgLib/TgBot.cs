@@ -151,7 +151,8 @@ namespace TgLib
 
         internal void RaiseCommandErrored(CommandContext ctx, Exception ex)
         {
-            _ = CommandErrored?.Invoke(ctx, ex);
+            if(ex is not TaskCanceledException)
+                _ = CommandErrored?.Invoke(ctx, ex);
         }
 
         internal bool InvokeCommand(TgCommand command, TgUser user, List<string> commandArgs)

@@ -36,7 +36,11 @@
 
         public void DeleteRequest(TgUser user)
         {
-            PendingInputs.Remove(user.ChatID);
+            if(PendingInputs.TryGetValue(user.ChatID, out Request? value))
+            {
+                value.Tcs.SetCanceled();
+                PendingInputs.Remove(user.ChatID);
+            }
         }
         #endregion
     }
