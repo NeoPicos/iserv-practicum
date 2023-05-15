@@ -38,10 +38,10 @@ namespace Practicum
         [Alias("Menu")]
         public static async Task MainMenu(CommandContext ctx)
         {
-            string name = DbConnection.ExecuteScalar($"SELECT `name` FROM users WHERE `id`={ctx.User.ChatID}").ToString()!;
-            string response = $"Здравствуйте, {name}!\n\n";
+            string?[] data = DbConnection.ExecuteReader($"SELECT u.name, count(r.title) FROM users u JOIN reminders r ON u.id = r.owner WHERE r.owner = {ctx.User.ChatID} AND DATE(r.datedue) = CURDATE();")[0];
+            string response = $"Здравствуйте, {data[0]}!\n\n";
 
-            response += "У вас ??? задач на сегодня\n\n"; // TODO: Уведомления на текущий день
+            response += $"У вас {data[1]} задач на сегодня\n\n";
 
             InlineKeyboardMarkup keyboard = new(new[] {
             new InlineKeyboardButton[]{
@@ -135,16 +135,6 @@ namespace Practicum
                         { "@DESC", eventDesc },
                         { "@DATE", eventParsedDT } });
             await ctx.RespondAsync("Событие успешно записано!");
-        }
-        #endregion
-
-        #region Navigation commands
-        //[Command]
-        // TODO: Заставить это работать
-        public static async Task Skip(CommandContext ctx)
-        {
-            ctx.User.CancelPendingInput();
-            await Task.CompletedTask;
         }
         #endregion
 
