@@ -1,7 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Reflection;
 using Telegram.Bot;
-using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using TgLib.Commands;
 using TgLib.Commands.Exceptions;
@@ -22,8 +21,8 @@ namespace TgLib
 
         #region Internal fields
         internal readonly List<KeyValuePair<string, TgCommand>> _registeredCommands = new();
-        internal UserCache cache = null!;
-        internal Interactivity interact = null!;
+        internal readonly InteractivityModule _interactivity;
+        internal readonly CacheModule _cache = null!;
         #endregion
 
         #region Public methods
@@ -32,7 +31,11 @@ namespace TgLib
         /// </summary>
         /// <param name="token">Токен Telegram-бота</param>
         /// <exception cref="ArgumentException"></exception>
-        public TgBot(string token) : base(token) { }
+        public TgBot(string token) : base(token) 
+        {
+            _interactivity = new InteractivityModule();
+            _cache = new CacheModule(this);
+        }
 
         /// <summary>
         /// Регистрирует класс <typeparamref name="T"/> как список команд для бота.
@@ -40,17 +43,21 @@ namespace TgLib
         /// <typeparam name="T">Класс, содержащий методы для выполнения как команды</typeparam>
         public void RegisterCommands<T>() where T : class
         {
+            // Просматриваем все методы с атрибутом CommandAttribute
             foreach (MethodInfo method in typeof(T).GetMethods().Where(x => !x.Name.StartsWith("get_") && !x.Name.StartsWith("set_")))
             {
                 CommandAttribute? commandAttr = method.GetCustomAttribute<CommandAttribute>();
                 if (commandAttr is null)
                     continue;
 
+                // Первый параметр метода всегда должен быть CommandContext
                 ParameterInfo[] methodArgs = method.GetParameters();
                 if (methodArgs.Length == 0 || methodArgs[0].ParameterType != typeof(CommandContext))
                     continue;
-                TgCommand command = new(method, commandAttr.Name);
 
+                // Регистрируем метод как команду и записываем её псевдонимы
+                // Псевдонимы команд - те же методы, но под другими именами
+                TgCommand command = new(method, commandAttr.Name);
                 AliasAttribute? aliasAttribute = method.GetCustomAttribute<AliasAttribute>();
                 if (aliasAttribute is not null)
                 {
@@ -66,70 +73,13 @@ namespace TgLib
         }
 
         /// <summary>
-        /// Пытается подключиться к серверам Telegram и начать прослушивание приходящих сообщений
+        /// Подключается к Telegram и начинает цикл обработки сообщений
         /// </summary>
         public async Task ConnectAsync()
         {
-            cache = new UserCache(this);
-            interact = new Interactivity();
-            ReceiverOptions op = new ReceiverOptions() { ThrowPendingUpdates = true };
-            this.StartReceiving(InternalUpdateHandler, InternalErrorHandler, op);
+            _cache.AutoclearSetRunning(true);
+            this.StartReceiving(InternalUpdateHandler, InternalErrorHandler, new() { ThrowPendingUpdates = true });
             await Task.CompletedTask;
-        }
-        #endregion
-
-        #region Internal methods
-        internal async Task InternalUpdateHandler(ITelegramBotClient client, Update update, CancellationToken clsToken)
-        {
-            if (update.CallbackQuery is { } callback)
-            {
-                CallbackQueryRecieved?.Invoke(this, cache.GetOrCreateUser(callback.From.Id), callback);
-                return;
-            }
-
-            if (update.Message is not { } message)
-                return;
-            if (message.Text is not { } messageText)
-                return;
-            long chatId = message.Chat.Id;
-            TgUser user = cache.GetOrCreateUser(chatId);
-            user.LastMessage = message;
-
-            if (messageText.StartsWith('/') && messageText.Length > 2 && !"0123456789\"\'".Contains(messageText[1]))
-            {
-                List<string> commandArgs = messageText.Split('\'', '\"')
-                        .Select((element, index) => index % 2 == 0 ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) : new[] { element })
-                        .SelectMany(element => element)
-                        .Where(element => !string.IsNullOrEmpty(element))
-                        .ToList();
-                string commandName = commandArgs[0][1..].ToLower();
-                commandArgs.RemoveAt(0);
-                InvokeCommand(commandName, user, commandArgs);
-            }
-            else
-            {
-                if (interact.TryGetRequest(user, out Request? req))
-                {
-                    interact.SetCompleted(user, messageText);
-                }
-                else
-                {
-                    _ = MessageRecieved?.Invoke(this, message);
-                }
-            }
-            await Task.CompletedTask;
-        }
-
-        internal Task InternalErrorHandler(ITelegramBotClient _1, Exception exception, CancellationToken _2)
-        {
-            _ = PollingErrored?.Invoke(this, exception)!;
-            return Task.CompletedTask;
-        }
-
-        // TODO: Куда-нибудь вытащить следующие три метода
-        internal void RaiseCommandErrored(CommandContext ctx, Exception ex)
-        {
-            _ = CommandErrored?.Invoke(ctx, ex);
         }
 
         /// <summary>
@@ -146,6 +96,60 @@ namespace TgLib
                     return;
             }
             _ = CommandErrored?.Invoke(new CommandContext(this, user, null!), new CommandNotFoundException(commandName));
+        }
+        #endregion
+
+        #region Internal methods
+        internal async Task InternalUpdateHandler(ITelegramBotClient client, Update update, CancellationToken clsToken)
+        {
+            if (update.CallbackQuery is { } callback)
+            {
+                CallbackQueryRecieved?.Invoke(this, _cache.GetOrCreateUser(callback.From.Id), callback);
+                return;
+            }
+
+            if (update.Message is not { } message)
+                return;
+            if (message.Text is not { } messageText)
+                return;
+            long chatId = message.Chat.Id;
+            TgUser user = _cache.GetOrCreateUser(chatId);
+            user.LastMessage = message;
+
+            if (messageText.StartsWith('/') && messageText.Length > 2 && !"0123456789\"\'".Contains(messageText[1]))
+            {
+                List<string> commandArgs = messageText.Split('\'', '\"')
+                        .Select((element, index) => index % 2 == 0 ? element.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) : new[] { element })
+                        .SelectMany(element => element)
+                        .Where(element => !string.IsNullOrEmpty(element))
+                        .ToList();
+                string commandName = commandArgs[0][1..].ToLower();
+                commandArgs.RemoveAt(0);
+                InvokeCommand(commandName, user, commandArgs);
+            }
+            else
+            {
+                if (_interactivity.TryGetRequest(user, out Request? req))
+                {
+                    _interactivity.SetCompleted(user, messageText);
+                }
+                else
+                {
+                    _ = MessageRecieved?.Invoke(this, message);
+                }
+            }
+            await Task.CompletedTask;
+        }
+
+        internal Task InternalErrorHandler(ITelegramBotClient _1, Exception exception, CancellationToken _2)
+        {
+            _ = PollingErrored?.Invoke(this, exception)!;
+            return Task.CompletedTask;
+        }
+
+        internal void RaiseCommandErrored(CommandContext ctx, Exception ex)
+        {
+            _ = CommandErrored?.Invoke(ctx, ex);
         }
 
         internal bool InvokeCommand(TgCommand command, TgUser user, List<string> commandArgs)
@@ -194,16 +198,16 @@ namespace TgLib
         /// <summary>
         /// Делегат, описывающий обработчик ошибок цикла событий
         /// </summary>
-        /// <param name="client">Клиент бота, в котором возникло исключение</param>
+        /// <param name="sender">Клиент бота, в котором возникло исключение</param>
         /// <param name="ex">Вызванное исключение</param>
-        public delegate Task PollingErrorHandler(TgBot client, Exception ex);
+        public delegate Task PollingErrorHandler(TgBot sender, Exception ex);
 
         /// <summary>
         /// Делегат, описывающий обработчик входящих сообщений, не являющихся командами
         /// </summary>
-        /// <param name="client">Клиент бота, которому пришло сообщение</param>
+        /// <param name="sender">Клиент бота, которому пришло сообщение</param>
         /// <param name="msg">Объект полученного сообщения</param>
-        public delegate Task MessageRecievedHandler(TgBot client, Message msg);
+        public delegate Task MessageRecievedHandler(TgBot sender, Message msg);
 
         /// <summary>
         /// Делегат, описывающий обработчик ошибок выполнения команды
@@ -215,7 +219,7 @@ namespace TgLib
         /// <summary>
         /// Делегат, описывающий обработчик полученного callback запроса
         /// </summary>
-        /// <param name="sender"></param>
+        /// <param name="sender">Клиент бота, которому пришло событие</param>
         /// <param name="user"></param>
         /// <param name="query"></param>
         /// <returns></returns>

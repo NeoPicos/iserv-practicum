@@ -2,53 +2,63 @@
 
 namespace TgLib
 {
-    internal class UserCache
+    internal class CacheModule
     {
-        private readonly List<TgUser> cache = new();
-        private readonly TgBot client = null!;
-        private readonly System.Timers.Timer autoclearTimer = new(TimeSpan.FromMinutes(10));
+        #region Private fields
+        private readonly List<TgUser> _cache = new();
+        private readonly TgBot _client = null!;
+        private readonly System.Timers.Timer _autoclearTimer = new(TimeSpan.FromMinutes(10));
+        private readonly TimeSpan _autoremoveInterval = TimeSpan.FromMinutes(10);
+        #endregion
 
-        public UserCache(TgBot client)
+        #region Public methods
+        public CacheModule(TgBot client, TimeSpan? AutoremoveInterval=null)
         {
-            this.client = client;
+            _client = client;
 
-            autoclearTimer.Elapsed += Autoclear;
-            autoclearTimer.AutoReset = true;
-            autoclearTimer.Start();
+            _autoremoveInterval = AutoremoveInterval ?? TimeSpan.FromMinutes(10);
+            _autoclearTimer.Elapsed += Autoclear;
+            _autoclearTimer.AutoReset = true;
         }
 
         public TgUser GetOrCreateUser(long chatid)
         {
-            TgUser? user = cache.FirstOrDefault((x) => x.ChatID == chatid);
+            TgUser? user = _cache.FirstOrDefault((x) => x.ChatID == chatid);
             if (user is null)
             {
-                user = new TgUser(client, chatid);
-                cache.Add(user);
+                user = new TgUser(_client, chatid);
+                _cache.Add(user);
             }
             return user;
         }
 
-        public void DeleteUser(TgUser client)
+        public void UncacheUser(TgUser user)
         {
-            UncacheUser(client);
+            _cache.Remove(user);
+            _client._interactivity.DeleteRequest(user);
+            user.Dispose();
         }
 
+        public void AutoclearSetRunning(bool enabled)
+        {
+            if(enabled)
+                _autoclearTimer.Start();
+            else 
+                _autoclearTimer.Stop();
+        }
+        #endregion
+
+        #region Private methods
         private void Autoclear(object? sender, ElapsedEventArgs e)
         {
-            foreach (TgUser i in cache)
+            foreach (TgUser i in _cache)
             {
-                if ((DateTime.Now - i.LastMessage?.Date) > TimeSpan.FromMinutes(10))
+                if ((DateTime.Now - i.LastMessage?.Date) > _autoremoveInterval)
                 {
                     UncacheUser(i);
                 }
             }
         }
-
-        private void UncacheUser(TgUser user)
-        {
-            cache.Remove(user);
-            client.interact.DeleteRequest(user);
-            user.Dispose();
-        }
+        #endregion
     }
 }

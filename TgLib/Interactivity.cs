@@ -1,24 +1,27 @@
 ﻿namespace TgLib
 {
-    internal class Interactivity
+    internal class InteractivityModule
     {
-        public readonly Dictionary<long, Request> pendingInputs;
+        #region Public fields
+        public readonly Dictionary<long, Request> PendingInputs;
+        #endregion
 
-        public Interactivity()
+        #region Public methods
+        public InteractivityModule()
         {
-            pendingInputs = new();
+            PendingInputs = new();
         }
 
         public bool TryGetRequest(TgUser user, out Request? request)
         {
-            return pendingInputs.TryGetValue(user.ChatID, out request);
+            return PendingInputs.TryGetValue(user.ChatID, out request);
         }
 
         public Request AddRequest(TgUser user)
         {
-            pendingInputs.Remove(user.ChatID);
+            PendingInputs.Remove(user.ChatID);
             Request req = new(user);
-            pendingInputs.Add(user.ChatID, req);
+            PendingInputs.Add(user.ChatID, req);
             return req;
         }
 
@@ -33,8 +36,9 @@
 
         public void DeleteRequest(TgUser user)
         {
-            pendingInputs.Remove(user.ChatID);
+            PendingInputs.Remove(user.ChatID);
         }
+        #endregion
     }
 
     internal class Request

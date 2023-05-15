@@ -21,22 +21,22 @@ namespace TgLib
         /// <summary>
         /// Ожидается ли ввод от пользователя
         /// </summary>
-        public bool IsPendingInput { get { return client.interact.pendingInputs.Any((x) => x.Key == ChatID); } }
+        public bool IsPendingInput { get { return _client._interactivity.PendingInputs.Any((x) => x.Key == ChatID); } }
         #endregion
 
         #region Internal fields
-        internal readonly TgBot client;
+        internal readonly TgBot _client;
         #endregion
 
         #region Public Methods
         /// <summary>
-        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="UserCache.GetOrCreateUser(long)"/></para>
+        /// Создаёт новый экземпляр пользователя, но не чат с ним <para>Использование этого метода напрямую не рекомендуется, используйте <see cref="CacheModule.GetOrCreateUser(long)"/></para>
         /// </summary>
-        /// <param name="botclient">Клиент бота, с которым связать пользователя</param>
+        /// <param name="client">Клиент бота, с которым связать пользователя</param>
         /// <param name="id">ID чата</param>
-        public TgUser(TgBot botclient, long id)
+        public TgUser(TgBot client, long id)
         {
-            client = botclient;
+            _client = client;
             ChatID = id;
         }
 
@@ -50,7 +50,7 @@ namespace TgLib
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            Message msg = await client.SendTextMessageAsync(ChatID, messageText, replyMarkup: replyMarkup);
+            Message msg = await _client.SendTextMessageAsync(ChatID, messageText, replyMarkup: replyMarkup);
             LastMessage = msg;
             return msg;
         }
@@ -61,11 +61,11 @@ namespace TgLib
         /// <param name="document">Документ для отправки</param>
         /// <param name="caption">Комментарий к отправленному файлу</param>
         /// <returns>Отправленное сообщение</returns>
-        public async Task<Message> SendFile(InputFile document, string caption="")
+        public async Task<Message> SendFile(InputFile document, string caption = "")
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            Message msg = await client.SendDocumentAsync(ChatID, document, caption: caption);
+            Message msg = await _client.SendDocumentAsync(ChatID, document, caption: caption);
             LastMessage = msg;
             return msg;
         }
@@ -75,12 +75,19 @@ namespace TgLib
         /// </summary>
         public void CancelPendingInput()
         {
-            client.interact.DeleteRequest(this);
+            _client._interactivity.DeleteRequest(this);
         }
         #endregion
 
         #region IDisposable
         private bool disposed;
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
 
         /// <inheritdoc cref="IDisposable.Dispose"/>
         protected virtual void Dispose(bool disposing)
@@ -92,13 +99,6 @@ namespace TgLib
                 }
                 disposed = true;
             }
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
         }
         #endregion
 
@@ -131,7 +131,7 @@ namespace TgLib
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(client, ChatID, LastMessage, disposed);
+            return HashCode.Combine(_client, ChatID, LastMessage, IsPendingInput, disposed);
         }
         #endregion
     }
