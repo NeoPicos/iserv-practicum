@@ -99,7 +99,7 @@ namespace Practicum
                 InlineKeyboardButton.WithCallbackData("Назад в меню", "menu"),
             } });
 
-            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot)
+            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot && ctx.User.LastMessage.ReplyMarkup is not null)
             {
                 try
                 {
