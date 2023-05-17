@@ -7,12 +7,25 @@ namespace Practicum
     {
         internal static async Task CallbackQueryRecieved(TgBot sender, TgUser user, CallbackQuery query)
         {
-            switch (query.Data)
+            string data = query.Data!;
+            string payload = "";
+            if (data.Contains('.'))
+            {
+                int dot = data.IndexOf('.');
+                payload = data[(dot + 1)..];
+                data = data[..dot];
+            }
+
+            switch (data)
             {
                 case "events":
                 case "newEvent":
                 case "menu":
-                    sender.InvokeCommand(query.Data, user, new());
+                    sender.InvokeCommand(data, user, new());
+                    break;
+                case "event":
+                case "deleteEvent":
+                    sender.InvokeCommand(data, user, new() { payload });
                     break;
                 case "left":
                 case "toleft":
@@ -21,7 +34,7 @@ namespace Practicum
                     ChangePage(sender, user, query);
                     break;
                 case "cancel":
-                    user.CancelPendingInput(true); 
+                    user.CancelPendingInput(true);
                     break;
             }
             await Task.CompletedTask;

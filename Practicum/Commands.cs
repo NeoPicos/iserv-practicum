@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -58,16 +59,7 @@ namespace Practicum
                 InlineKeyboardButton.WithCallbackData("Добавить новое событие", "newEvent"),
             } });
 
-            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot)
-            {
-                try
-                {
-                    await ctx.Client.EditMessageTextAsync(new ChatId(ctx.User.ChatID), (int)(ctx.User.LastMessage?.MessageId)!, response, replyMarkup: keyboard);
-                }
-                catch (Telegram.Bot.Exceptions.ApiRequestException) { }
-            }
-            else
-                await ctx.RespondAsync(response, keyboard);
+            await ctx.EditOrRespondAsync(response, keyboard);
         }
 
         [Command]
@@ -82,33 +74,26 @@ namespace Practicum
             List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `owner`={ctx.User.ChatID} LIMIT 5 OFFSET {offset}");
             string response = $"Ваши напоминания | Страница [{page}/???] \n";
             offset++;
-            foreach (string?[] reminder in table)
-            {
-                //            {Счётчик}.   {Заголовок}  - {Описание}
-                response += $"{offset++}. {reminder[1]} - {reminder[2]}\n";
-            }
 
-            InlineKeyboardMarkup keyboard = new(new[] {
+            List<InlineKeyboardButton[]> keyboardBuilder = new() {
             new InlineKeyboardButton[]{
                 InlineKeyboardButton.WithCallbackData("<<", "toleft"),
                 InlineKeyboardButton.WithCallbackData("<-", "left"),
                 InlineKeyboardButton.WithCallbackData("->", "right"),
                 InlineKeyboardButton.WithCallbackData(">>", "toright"),
-            },
-            new InlineKeyboardButton[]{
-                InlineKeyboardButton.WithCallbackData("Назад в меню", "menu"),
-            } });
+            } };
 
-            if (ctx.User.LastMessage is not null && ctx.User.LastMessage.From!.IsBot && ctx.User.LastMessage.ReplyMarkup is not null)
+            foreach (string?[] reminder in table)
             {
-                try
-                {
-                    await ctx.Client.EditMessageTextAsync(new ChatId(ctx.User.ChatID), (int)(ctx.User.LastMessage?.MessageId)!, response, replyMarkup: keyboard);
-                }
-                catch (Telegram.Bot.Exceptions.ApiRequestException) { }
+                //            {Счётчик}.   {Заголовок}
+                response += $"{offset++}. {reminder[1]}\n";
+                keyboardBuilder.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData(reminder[1]!, $"event.{reminder[0]}") });
             }
-            else
-                await ctx.RespondAsync(response, keyboard);
+
+            keyboardBuilder.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("Назад в меню", "menu") });
+            InlineKeyboardMarkup keyboard = new(keyboardBuilder);
+
+            await ctx.EditOrRespondAsync(response, keyboard);
         }
 
         [Command]
@@ -121,7 +106,7 @@ namespace Practicum
         public static async Task NewEvent(CommandContext ctx)
         {
             // Кнопка отмены, общая для всех шагов
-            InlineKeyboardMarkup cancelkeyboard = new(new[] { new InlineKeyboardButton[]{ InlineKeyboardButton.WithCallbackData("Отменить создание", "cancel") } });
+            InlineKeyboardMarkup cancelkeyboard = new(new[] { new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("Отменить создание", "cancel") } });
             // 1. Название
             await ctx.RespondAsync("**Придумай заголовок к событию.**\n\nХороший заголовок - очень краткое описание того, что ты хочешь сделать" +
                 "Например, \"Сходить к стоматологу\" или \"Купить корм собаке\". Максимум - 64 символа!", cancelkeyboard);
@@ -136,9 +121,11 @@ namespace Practicum
             // 2. Описание
             await ctx.RespondAsync("Отлично! Теперь можешь вписать **описание** этого события.\n\n" +
                 "Включи сюда любую информацию, что посчитаешь нужной\n" +
-                "Лимит - 4096 символов (полное сообщение!)\n" +
+                "Лимит - 3072 символа!\n" +
                 "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard);
             string eventDesc = await ctx.WaitForUserInput();
+            if (eventDesc.Length > 3072)
+                eventDesc = eventDesc[..3072];
 
             // 3. Напоминание
             await ctx.RespondAsync("Если тебе нужно напомнить об этом событии, укажи время и дату, когда это сделать!\n\n" +
@@ -163,6 +150,37 @@ namespace Practicum
                         { "@DESC", eventDesc },
                         { "@DATE", eventParsedDT } });
             await ctx.RespondAsync("Событие успешно записано!");
+        }
+
+        [Command]
+        public static async Task Event(CommandContext ctx, int id)
+        {
+            List<string?[]> res = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `id`={id}");
+            if (!res.Any())
+            {
+                await ctx.RespondAsync("Событие с таким ID не найдено!");
+                return;
+            }
+            string?[] eventData = res[0];
+            StringBuilder response = new StringBuilder($"Событие \"{eventData[1]}\"\n")
+                .AppendLine($"Напоминание в: {eventData[4] ?? "❌"}\n")
+                .AppendLine($"=== Описание ===\n {eventData[2]}");
+
+            InlineKeyboardMarkup keyboard = new(new[] {
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Удалить событие", $"deleteEvent.{eventData[0]}"),
+            },
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Вернуться назад", "events"),
+            } });
+
+            await ctx.EditOrRespondAsync(response.ToString(), keyboard);
+        }
+
+        [Command]
+        public static async Task DeleteEvent(CommandContext ctx, int id) {
+            DbConnection.ExecuteScalar($"DELETE FROM `reminders` WHERE (`id`={id} AND `owner`={ctx.User.ChatID});"); // security be like
+            await ctx.RespondAsync("Событие успешно удалено");
         }
         #endregion
 
