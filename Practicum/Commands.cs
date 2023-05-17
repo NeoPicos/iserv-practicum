@@ -108,8 +108,8 @@ namespace Practicum
             // Кнопка отмены, общая для всех шагов
             InlineKeyboardMarkup cancelkeyboard = new(new[] { new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("Отменить создание", "cancel") } });
             // 1. Название
-            await ctx.RespondAsync("**Придумай заголовок к событию.**\n\nХороший заголовок - очень краткое описание того, что ты хочешь сделать" +
-                "Например, \"Сходить к стоматологу\" или \"Купить корм собаке\". Максимум - 64 символа!", cancelkeyboard);
+            await ctx.RespondAsync("*Придумай заголовок к событию*\n\nХороший заголовок - очень краткое описание того, что ты хочешь сделать.\n" +
+                "Например, \"Сходить к стоматологу\" или \"Купить корм собаке\". Максимум - 64 символа!", cancelkeyboard, true);
             string eventTitle = await ctx.WaitForUserInput();
             while (eventTitle.Length <= 3 || eventTitle.Length > 64)
             {
@@ -119,10 +119,10 @@ namespace Practicum
             }
 
             // 2. Описание
-            await ctx.RespondAsync("Отлично! Теперь можешь вписать **описание** этого события.\n\n" +
+            await ctx.RespondAsync("Отлично! Теперь можешь вписать *описание* этого события.\n\n" +
                 "Включи сюда любую информацию, что посчитаешь нужной\n" +
                 "Лимит - 3072 символа!\n" +
-                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard);
+                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard, true);
             string eventDesc = await ctx.WaitForUserInput();
             if (eventDesc.Length > 3072)
                 eventDesc = eventDesc[..3072];
@@ -130,7 +130,7 @@ namespace Practicum
             // 3. Напоминание
             await ctx.RespondAsync("Если тебе нужно напомнить об этом событии, укажи время и дату, когда это сделать!\n\n" +
                 "Формат - дд.мм.гг чч:мм\n" +
-                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard);
+                "Или пропусти этот шаг с помощью команды /skip", cancelkeyboard, true);
             string eventDT = await ctx.WaitForUserInput();
             DateTime eventParsedDT = DateTime.MaxValue;
             if (eventDT != "skip")
@@ -174,13 +174,16 @@ namespace Practicum
                 InlineKeyboardButton.WithCallbackData("Вернуться назад", "events"),
             } });
 
-            await ctx.EditOrRespondAsync(response.ToString(), keyboard);
+            await ctx.EditOrRespondAsync(response.ToString(), keyboard, true);
         }
 
         [Command]
         public static async Task DeleteEvent(CommandContext ctx, int id) {
-            DbConnection.ExecuteScalar($"DELETE FROM `reminders` WHERE (`id`={id} AND `owner`={ctx.User.ChatID});"); // security be like
-            await ctx.RespondAsync("Событие успешно удалено");
+            int rowAffected = DbConnection.ExecuteNonQuery($"DELETE FROM `reminders` WHERE (`id`={id} AND `owner`={ctx.User.ChatID});");
+            if (rowAffected == 1)
+                await ctx.RespondAsync("Событие успешно удалено");
+            else
+                await ctx.RespondAsync("Такое событие не найдено :(");
         }
         #endregion
 

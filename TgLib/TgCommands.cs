@@ -108,29 +108,31 @@ namespace TgLib.Commands
         /// </summary>
         /// <param name="message">Отправляемое сообщение</param>
         /// <param name="markup">Приложения к сообщению</param>
+        /// <param name="enableTextMarkdown">Нужно ли использовать MarkdownV2 в тексте сообщения</param>
         /// <returns>Экземпляр отправленного сообщения</returns>
-        public async Task<Message> RespondAsync(string message, IReplyMarkup? markup = null)
+        public async Task<Message> RespondAsync(string message, IReplyMarkup? markup = null, bool enableTextMarkdown = false)
         {
-            return await User.SendMessage(message, markup);
+            return await User.SendMessage(message, markup, enableTextMarkdown);
         }
 
         /// <summary>
-        /// 
+        /// Редактирует отправленное ранее сообщение от бота, или посылает новое, если оно не является последним
         /// </summary>
-        /// <param name="message"></param>
-        /// <param name="markup"></param>
-        /// <returns></returns>
-        public async Task<Message> EditOrRespondAsync(string message, IReplyMarkup? markup = null)
+        /// <param name="message">Отправляемое сообщение</param>
+        /// <param name="markup">Приложения к сообщению</param>
+        /// <param name="enableTextMarkdown">Нужно ли использовать MarkdownV2 в тексте сообщения</param>
+        /// <returns>Экземпляр отправленного сообщения</returns>
+        public async Task<Message> EditOrRespondAsync(string message, IReplyMarkup? markup = null, bool enableTextMarkdown = false)
         {
             if (User.LastMessage is not null && User.LastMessage.From!.IsBot && User.LastMessage.ReplyMarkup is not null)
             {
                 try
                 {
-                    return await Client.EditMessageTextAsync(new ChatId(User.ChatID), (int)(User.LastMessage?.MessageId)!, message, replyMarkup: (InlineKeyboardMarkup?)markup);
+                    return await Client.EditMessageTextAsync(new ChatId(User.ChatID), (int)(User.LastMessage?.MessageId)!, message, replyMarkup: (InlineKeyboardMarkup?)markup, parseMode: enableTextMarkdown ? Telegram.Bot.Types.Enums.ParseMode.Markdown : null);
                 }
-                catch (Telegram.Bot.Exceptions.ApiRequestException) {  }
+                catch (Telegram.Bot.Exceptions.ApiRequestException) { }
             }
-            return await RespondAsync(message, markup);
+            return await RespondAsync(message, markup, enableTextMarkdown);
         }
 
         /// <summary>

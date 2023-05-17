@@ -45,12 +45,13 @@ namespace TgLib
         /// </summary>
         /// <param name="messageText">Текст сообщения</param>
         /// <param name="replyMarkup">Приложения к сообщению</param>
+        /// <param name="enableTextMarkdown">Нужно ли использовать MarkdownV2 в тексте сообщения</param>
         /// <returns>Отправленное сообщение</returns>
-        public async Task<Message> SendMessage(string messageText, IReplyMarkup? replyMarkup = null)
+        public async Task<Message> SendMessage(string messageText, IReplyMarkup? replyMarkup = null, bool enableTextMarkdown = false)
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().FullName);
-            Message msg = await _client.SendTextMessageAsync(ChatID, messageText, replyMarkup: replyMarkup);
+            Message msg = await _client.SendTextMessageAsync(ChatID, messageText, replyMarkup: replyMarkup, parseMode: enableTextMarkdown ? Telegram.Bot.Types.Enums.ParseMode.Markdown : null);
             LastMessage = msg;
             return msg;
         }
