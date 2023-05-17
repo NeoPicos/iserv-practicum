@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -111,6 +112,25 @@ namespace TgLib.Commands
         public async Task<Message> RespondAsync(string message, IReplyMarkup? markup = null)
         {
             return await User.SendMessage(message, markup);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <param name="markup"></param>
+        /// <returns></returns>
+        public async Task<Message> EditOrRespondAsync(string message, IReplyMarkup? markup = null)
+        {
+            if (User.LastMessage is not null && User.LastMessage.From!.IsBot && User.LastMessage.ReplyMarkup is not null)
+            {
+                try
+                {
+                    return await Client.EditMessageTextAsync(new ChatId(User.ChatID), (int)(User.LastMessage?.MessageId)!, message, replyMarkup: (InlineKeyboardMarkup?)markup);
+                }
+                catch (Telegram.Bot.Exceptions.ApiRequestException) {  }
+            }
+            return await RespondAsync(message, markup);
         }
 
         /// <summary>
