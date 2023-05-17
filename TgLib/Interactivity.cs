@@ -29,8 +29,8 @@
         {
             if (TryGetRequest(user, out Request? req))
             {
-                DeleteRequest(user);
                 req!.Tcs.SetResult(result);
+                PendingInputs.Remove(user.ChatID);
             }
         }
 
