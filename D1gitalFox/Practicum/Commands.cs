@@ -1,7 +1,5 @@
 ﻿using System.Globalization;
 using System.Text;
-using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgLib.Commands;
 
@@ -56,6 +54,9 @@ namespace Practicum
                 InlineKeyboardButton.WithCallbackData("Все события", "events"),
             },
             new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("Ближайшие события", "closestEvents"),
+            },
+            new InlineKeyboardButton[]{
                 InlineKeyboardButton.WithCallbackData("Добавить новое событие", "newEvent"),
             } });
 
@@ -72,7 +73,7 @@ namespace Practicum
             }
             int offset = (page - 1) * 5;
             List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM `reminders` WHERE `owner`={ctx.User.ChatID} LIMIT 5 OFFSET {offset}");
-            string response = $"Ваши напоминания | Страница [{page}/???] \n";
+            string response = $"Все напоминания | Страница [{page}/???] \n";
             offset++;
 
             List<InlineKeyboardButton[]> keyboardBuilder = new() {
@@ -85,7 +86,7 @@ namespace Practicum
 
             foreach (string?[] reminder in table)
             {
-                //            {Счётчик}.   {Заголовок}
+                //            {Счётчик}.  {Заголовок}
                 response += $"{offset++}. {reminder[1]}\n";
                 keyboardBuilder.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData(reminder[1]!, $"event.{reminder[0]}") });
             }
@@ -100,6 +101,34 @@ namespace Practicum
         public static async Task Events(CommandContext ctx)
         {
             await Events(ctx, 1);
+        }
+
+        [Command]
+        public static async Task ClosestEvents(CommandContext ctx)
+        {
+            List<string?[]> table = DbConnection.ExecuteReader($"SELECT * FROM reminders WHERE owner={ctx.User.ChatID} ORDER BY datedue DESC LIMIT 5 OFFSET 0");
+            string response = $"Ближайшие напоминания\n";
+
+            List<InlineKeyboardButton[]> keyboardBuilder = new() {
+            new InlineKeyboardButton[]{
+                InlineKeyboardButton.WithCallbackData("<<", "toleft"),
+                InlineKeyboardButton.WithCallbackData("<-", "left"),
+                InlineKeyboardButton.WithCallbackData("->", "right"),
+                InlineKeyboardButton.WithCallbackData(">>", "toright"),
+            } };
+
+            int offset = 1;
+            foreach (string?[] reminder in table)
+            {
+                //            {Счётчик}.  {Заголовок}
+                response += $"{offset++}. {reminder[1]}\n";
+                keyboardBuilder.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData(reminder[1]!, $"event.{reminder[0]}") });
+            }
+
+            keyboardBuilder.Add(new InlineKeyboardButton[] { InlineKeyboardButton.WithCallbackData("Назад в меню", "menu") });
+            InlineKeyboardMarkup keyboard = new(keyboardBuilder);
+
+            await ctx.EditOrRespondAsync(response, keyboard);
         }
 
         [Command]
@@ -150,6 +179,9 @@ namespace Practicum
                         { "@DESC", eventDesc },
                         { "@DATE", eventParsedDT } });
             await ctx.RespondAsync("Событие успешно записано!");
+
+            await Task.Delay(3000);
+            ctx.Client.InvokeCommand("menu", ctx.User, new());
         }
 
         [Command]
@@ -163,7 +195,7 @@ namespace Practicum
             }
             string?[] eventData = res[0];
             StringBuilder response = new StringBuilder($"Событие \"{eventData[1]}\"\n")
-                .AppendLine($"Напоминание в: {eventData[4] ?? "❌"}\n")
+                .AppendLine($"Напоминание в: {(eventData[4] is null ? "❌" : $"{eventData[4]} (через {Program.Remaining(DateTime.Parse(eventData[4]!) - DateTime.Now)})")} \n")
                 .AppendLine($"=== Описание ===\n {eventData[2]}");
 
             InlineKeyboardMarkup keyboard = new(new[] {

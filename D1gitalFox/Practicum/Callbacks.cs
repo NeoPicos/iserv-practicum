@@ -18,6 +18,7 @@ namespace Practicum
 
             switch (data)
             {
+                case "closestevents":
                 case "events":
                 case "newEvent":
                 case "menu":
@@ -35,6 +36,7 @@ namespace Practicum
                     break;
                 case "cancel":
                     user.CancelPendingInput(true);
+
                     break;
             }
             await Task.CompletedTask;
