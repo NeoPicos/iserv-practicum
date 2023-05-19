@@ -1,0 +1,2 @@
+0123456789:TelegramBotAPI.Key
+Server=MySQLServerAddress;Database=MyDatabase;Uid=myUsername;pwd=myPassword
